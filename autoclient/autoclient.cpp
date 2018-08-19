@@ -8,20 +8,62 @@
 void Client::initTestCase()
 {
 	_keyPrefix = randomString(3);
-	initKeyProvider();
+
+	try
+	{
+		initKeyProvider();
+		QVERIFY(!_store.isNull());
+	}
+	catch (const std::exception& ex)
+	{
+		QFAIL(ex.what());
+	}
+	catch (...)
+	{
+		QFAIL("UNKNOWN ERROR");
+	}
+	
 }
 
 void Client::initKeyProvider()
 {
 	//_store.reset(new LocalKeyValueProvider);
-	_store.reset(new NetworkKeyValueProvider("127.0.0.1", 50000));
+
+	QString hostAddr("127.0.0.1");
+	quint16 port = 0;
+
+	QStringList args = QCoreApplication::arguments();
+	if (args.size() > 1)
+		hostAddr = args[1];
+
+	if (args.size() > 2)
+	{
+		bool ok;
+		port = args[2].toUShort(&ok);
+		if (!ok)
+			port = 50000;
+	}
+
+	if (args.size() > 3)
+	{
+		bool ok;
+		_maxIterations = args[3].toInt(&ok);
+		if (!ok)
+			_maxIterations = 1000;
+	}
+
+	_store.reset(new NetworkKeyValueProvider(hostAddr, port));
+
+	qInfo() << "connected to a server at " << hostAddr << ":" << port;
 }
 
 void Client::test_Insert()
 {
 	try
 	{
-		for (int i = 0; i < 1000; ++i)
+		qInfo() << "performing put -> check -> delete -> check" << _maxIterations << "times";
+
+		for (int i = 0; i < _maxIterations; ++i)
 		{
 			const QString key = randomKey();
 			QVERIFY(_store->value(key).isEmpty());
@@ -66,4 +108,11 @@ QString Client::randomValue()
 	return randomString(QRandomGenerator::global()->bounded(1, 1024));
 }
 
-QTEST_MAIN(Client)
+int main(int argc, char *argv[])
+{
+    QCoreApplication app(argc, argv);
+    app.setAttribute(Qt::AA_Use96Dpi, true);
+    Client tc;
+    QTEST_SET_MAIN_SOURCE_PATH
+    return QTest::qExec(&tc);
+}

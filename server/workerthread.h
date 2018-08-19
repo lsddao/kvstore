@@ -31,8 +31,6 @@ protected:
 	void respondOk(const QString& strDetails = QString::null);
 	void respondValue(const QString& key, const QString& val, const QString& strDetails = QString());
 
-	void printStats();
-
 private:
 	QTcpSocket _socket;
 	int _socketDescriptor{ -1 };

@@ -26,4 +26,5 @@ private:
 private:
 	QScopedPointer<IKeyValueProvider> _store;
 	QString _keyPrefix;
+	int _maxIterations{1000};
 };

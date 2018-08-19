@@ -16,6 +16,9 @@ public:
 protected:
     void incomingConnection(qintptr socketDescriptor) override;
 
+protected slots:
+	void printStats();
+
 private:
 	QScopedPointer<IKeyValueProvider> _store;
 };

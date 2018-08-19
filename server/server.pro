@@ -1,5 +1,6 @@
-QT += core network
 CONFIG += console
+QT += network
+QT -= gui
 
 HEADERS       = server.h \
                 workerthread.h \
