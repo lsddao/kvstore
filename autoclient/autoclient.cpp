@@ -57,7 +57,7 @@ void Client::initKeyProvider()
 	qInfo() << "connected to a server at " << hostAddr << ":" << port;
 }
 
-void Client::test_Insert()
+void Client::test_InsertDelete()
 {
 	try
 	{
@@ -86,6 +86,32 @@ void Client::test_Insert()
 	}
 }
 
+void Client::test_Insert()
+{
+	try
+	{
+		qInfo() << "performing put -> check" << _maxIterations << "times";
+
+		for (int i = 0; i < _maxIterations; ++i)
+		{
+			const QString key = randomKey();
+			QVERIFY(_store->value(key).isEmpty());
+
+			const QString val = randomValue();
+			_store->insert(key, val);
+			QVERIFY(_store->value(key) == val);
+		}
+	}
+	catch (const std::exception& ex)
+	{
+		QFAIL(ex.what());
+	}
+	catch (...)
+	{
+		QFAIL("UNKNOWN ERROR");
+	}
+}
+
 void Client::cleanupTestCase()
 {
 }
@@ -100,7 +126,7 @@ QString Client::randomString(const int length)
 
 QString Client::randomKey()
 {
-	return _keyPrefix + "_" + randomString(4);
+	return _keyPrefix + "_" + randomString(12);
 }
 
 QString Client::randomValue()

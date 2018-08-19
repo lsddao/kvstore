@@ -13,6 +13,7 @@ private slots:
 	void initTestCase();
 	
 	void test_Insert();
+	void test_InsertDelete();
 	
 	void cleanupTestCase();
 
