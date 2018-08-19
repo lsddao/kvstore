@@ -21,8 +21,8 @@ QString NetworkKeyValueProvider::value(const QString& key) const
 {
 	strm.startTransaction();
 	QMap<QString, QString> data;
-	data["type"] = QString("request");
-	data["method"] = QString("get");
+	data["type"] = "request";
+	data["method"] = "get";
 	data["key"] = key;
 	strm << data;
 	strm.commitTransaction();
@@ -36,8 +36,8 @@ void NetworkKeyValueProvider::insert(const QString& key, const QString& val)
 {
 	strm.startTransaction();
 	QMap<QString, QString> data;
-	data["type"] = QString("request");
-	data["method"] = QString("put");
+	data["type"] = "request";
+	data["method"] = "put";
 	data["key"] = key;
 	data["value"] = val;
 	strm << data;
@@ -66,8 +66,8 @@ void NetworkKeyValueProvider::remove(const QString& key)
 {
 	strm.startTransaction();
 	QMap<QString, QString> data;
-	data["type"] = QString("request");
-	data["method"] = QString("delete");
+	data["type"] = "request";
+	data["method"] = "delete";
 	data["key"] = key;
 	strm << data;
 	strm.commitTransaction();
