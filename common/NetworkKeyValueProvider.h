@@ -3,7 +3,7 @@
 #include <QDataStream>
 #include <QTcpSocket>
 
-#include "../common/KeyValueProvider.h"
+#include "KeyValueProvider.h"
 
 class NetworkKeyValueProvider : public IKeyValueProvider
 {

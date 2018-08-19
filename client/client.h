@@ -2,7 +2,7 @@
 
 #include <QtWidgets>
 
-#include "NetworkKeyValueProvider.h"
+#include "../common/NetworkKeyValueProvider.h"
 
 class Client : public QDialog
 {

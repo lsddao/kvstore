@@ -1,6 +1,6 @@
 #include "server.h"
 #include "workerthread.h"
-#include "LocalKeyValueProvider.h"
+#include "../common/LocalKeyValueProvider.h"
 
 Server::Server(QObject *parent)
     : QTcpServer(parent)

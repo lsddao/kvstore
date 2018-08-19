@@ -1,8 +1,8 @@
 QT += network widgets
 
 HEADERS       = client.h \
-				NetworkKeyValueProvider.h \
+				../common/NetworkKeyValueProvider.h \
 				../common/KeyValueProvider.h
 SOURCES       = client.cpp \
                 main.cpp \
-				NetworkKeyValueProvider.cpp
+				../common/NetworkKeyValueProvider.cpp

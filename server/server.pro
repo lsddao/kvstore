@@ -3,8 +3,8 @@ CONFIG += console
 
 HEADERS       = server.h \
                 workerthread.h \
-				LocalKeyValueProvider.h
+				../common/LocalKeyValueProvider.h
 SOURCES       = server.cpp \
                 workerthread.cpp \
                 main.cpp \
-				LocalKeyValueProvider.cpp
+				../common/LocalKeyValueProvider.cpp

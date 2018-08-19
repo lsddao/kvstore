@@ -35,21 +35,21 @@ void WorkerThread::onReadyRead()
 
 		if (request["method"] == "put")
 		{
-			qInfo() << "+" << request["key"];
+			//qInfo() << "+" << request["key"];
 
 			_store->insert(request["key"], request["value"]);
 			respondOk("inserted");
 		}
 		else if (request["method"] == "get")
 		{
-			qInfo() << "?" << request["key"];
+			//qInfo() << "?" << request["key"];
 
 			QString val = _store->value(request["key"]);
 			respondValue(request["key"], val, val.isEmpty() ? QString("empty") : QString());
 		}
 		else if (request["method"] == "delete")
 		{
-			qInfo() << "-" << request["key"];
+			//qInfo() << "-" << request["key"];
 
 			_store->remove(request["key"]);
 			respondOk("deleted");
@@ -131,6 +131,6 @@ void WorkerThread::respondValue(const QString& key, const QString& val, const QS
 
 void WorkerThread::printStats()
 {
-	qInfo() << "total count:" << _store->count();
+	//qInfo() << "total count:" << _store->count();
 }
 

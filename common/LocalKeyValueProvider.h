@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../common/KeyValueProvider.h"
+#include "KeyValueProvider.h"
 
 #include <QHash>
 
