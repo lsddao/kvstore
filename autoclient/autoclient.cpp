@@ -66,8 +66,6 @@ void Client::test_InsertDelete()
 		for (int i = 0; i < _maxIterations; ++i)
 		{
 			const QString key = randomKey();
-			QVERIFY(_store->value(key).isEmpty());
-
 			const QString val = randomValue();
 			_store->insert(key, val);
 			QVERIFY(_store->value(key) == val);
@@ -95,8 +93,6 @@ void Client::test_Insert()
 		for (int i = 0; i < _maxIterations; ++i)
 		{
 			const QString key = randomKey();
-			QVERIFY(_store->value(key).isEmpty());
-
 			const QString val = randomValue();
 			_store->insert(key, val);
 			QVERIFY(_store->value(key) == val);
