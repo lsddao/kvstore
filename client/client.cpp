@@ -112,7 +112,7 @@ void Client::onGet()
 	try
 	{
 		_valStr->setText(_provider->value(_keyStr->text()));
-		log(_provider->lastResponseError());
+		logResponse();
 	}
 	catch (const std::exception& ex)
 	{
@@ -120,12 +120,20 @@ void Client::onGet()
 	}
 }
 
+void Client::logResponse()
+{
+	QStringList lstLog = QStringList() << _provider->lastResponseError();
+	if (!_provider->lastResponseDetails().isEmpty())
+		lstLog << _provider->lastResponseDetails();
+	log(lstLog.join(": "));
+}
+
 void Client::onPut()
 {
 	try
 	{
 		_provider->insert(_keyStr->text(), _valStr->text());
-		log(_provider->lastResponseError());
+		logResponse();
 	}
 	catch (const std::exception& ex)
 	{
@@ -139,7 +147,7 @@ void Client::onDelete()
 	{
 		_valStr->clear();
 		_provider->remove(_keyStr->text());
-		log(_provider->lastResponseError());
+		logResponse();
 	}
 	catch (const std::exception& ex)
 	{

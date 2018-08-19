@@ -1,7 +1,7 @@
 #include "LocalKeyValueProvider.h"
 
 LocalKeyValueProvider::LocalKeyValueProvider(unsigned int maxMemoryMB)
-	: _maxMemory(_maxMemory * 1024 * 1024)
+	: _maxMemory(maxMemoryMB * 1024 * 1024)
 {
 }
 
@@ -27,4 +27,9 @@ void LocalKeyValueProvider::insert(const QString& key, const QString& val)
 void LocalKeyValueProvider::remove(const QString& key)
 {
 	_map.remove(key);
+}
+
+int LocalKeyValueProvider::count()
+{
+	return _map.size();
 }

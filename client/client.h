@@ -25,6 +25,7 @@ private slots:
 
 protected:
 	void log(const QString& str);
+	void logResponse();
 
 private:
 	QLineEdit* _keyStr = nullptr;

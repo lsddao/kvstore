@@ -13,6 +13,7 @@ public:
 	QString value(const QString& key) const override;
 	void insert(const QString& key, const QString& val) override;
 	void remove(const QString& key) override;
+	int count() override;
 
 private:
 	const unsigned int _maxMemory;
