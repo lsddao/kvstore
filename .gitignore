@@ -7,3 +7,4 @@
 *.pdb
 debug/
 release/
+*.user
