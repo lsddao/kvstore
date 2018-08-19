@@ -32,9 +32,9 @@ protected:
 	void respondValue(const QString& key, const QString& val, const QString& strDetails = QString());
 
 private:
-	QTcpSocket _socket;
+	QScopedPointer<QTcpSocket> _socket;
 	int _socketDescriptor{ -1 };
-	QDataStream _strm;
+	QScopedPointer<QDataStream> _strm;
 	QMap<QString, QString> request;
 	QMap<QString, QString> response;
 	IKeyValueProvider* _store;

@@ -6,21 +6,26 @@ WorkerThread::WorkerThread(int socketDescriptor, IKeyValueProvider* store)
 	: _socketDescriptor(socketDescriptor)
 	, _store(store)
 {
-	if (!_socket.setSocketDescriptor(_socketDescriptor))
-	{
-		emit error(_socket.error());
-		return;
-	}
-
-	_strm.setDevice(&_socket);
-	_strm.setVersion(QDataStream::Qt_5_10);
-
-	connect(&_socket, &QTcpSocket::disconnected, this, &WorkerThread::quit);
-	connect(&_socket, &QTcpSocket::readyRead, this, &WorkerThread::onReadyRead);
+	
 }
 
 void WorkerThread::run()
 {
+	_socket.reset(new QTcpSocket);
+
+	if (!_socket->setSocketDescriptor(_socketDescriptor))
+	{
+		emit error(_socket->error());
+		return;
+	}
+
+	_strm.reset(new QDataStream);
+	_strm->setDevice(_socket.data());
+	_strm->setVersion(QDataStream::Qt_5_10);
+
+	connect(_socket.data(), &QTcpSocket::disconnected, this, &WorkerThread::quit, Qt::DirectConnection);
+	connect(_socket.data(), &QTcpSocket::readyRead, this, &WorkerThread::onReadyRead, Qt::DirectConnection);
+
 	exec();
 }
 
@@ -62,9 +67,9 @@ void WorkerThread::onReadyRead()
 void WorkerThread::readRequest()
 {
 	request.clear();
-	_strm.startTransaction();
-	_strm >> request;
-	_strm.commitTransaction();
+	_strm->startTransaction();
+	*_strm.data() >> request;
+	_strm->commitTransaction();
 }
 
 void WorkerThread::requireField(const QString& name)
@@ -88,9 +93,9 @@ void WorkerThread::prepareResponse()
 
 void WorkerThread::sendResponse()
 {
-	_strm.startTransaction();
-	_strm << response;
-	_strm.commitTransaction();
+	_strm->startTransaction();
+	*_strm.data() << response;
+	_strm->commitTransaction();
 }
 
 void WorkerThread::respondError(const QString& str)
