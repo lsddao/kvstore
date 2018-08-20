@@ -27,12 +27,44 @@ PersistentKeyValueStorage::~PersistentKeyValueStorage()
 
 QString PersistentKeyValueStorage::value(const QString& key) const
 {
-	return {};
+	KeyValuePairQString kv{key, {}};
+	const auto indexEntry = _index.find(kv.keyHash());
+	if (indexEntry == _index.end())
+		return {}; // No such key in the storage
+
+	assert(indexEntry->second < _persistentStorageFile.size());
+	if (!_persistentStorageFile.seek(indexEntry->second))
+	{
+		qInfo() << "Seek to the location of key/value entry" << indexEntry->second << "for key" << key << "failed:" << _persistentStorageFile.errorString();
+		return {};
+	}
+
+	if (!kv.read(_persistentStorageFile))
+	{
+		qInfo() << "Reading key/value entry for key" << key << "failed at location" << indexEntry->second << "failed:" << _persistentStorageFile.errorString();
+		return {};
+	}
+
+	return kv.value;
 }
 
 void PersistentKeyValueStorage::insert(const QString& key, const QString& val)
 {
+	KeyValuePairQString kv{key, val};
+	const auto indexEntry = _index.find(kv.keyHash());
+	const qint64 pos = indexEntry == _index.end() ? _persistentStorageFile.size() : indexEntry->second;
 
+	if (!_persistentStorageFile.seek(pos))
+	{
+		qInfo() << "Seek to the location of key/value entry insertion" << pos << "for key" << key << "failed:" << _persistentStorageFile.errorString();
+		return;
+	}
+
+	if (!kv.write(_persistentStorageFile))
+	{
+		qInfo() << "Writing key/value entry for key" << key << "failed at location" << pos << "failed:" << _persistentStorageFile.errorString();
+		return;
+	}
 }
 
 void PersistentKeyValueStorage::remove(const QString& key)
@@ -42,7 +74,7 @@ void PersistentKeyValueStorage::remove(const QString& key)
 
 int PersistentKeyValueStorage::count()
 {
-	return 0;
+	return (int)_index.size();
 }
 
 QString PersistentKeyValueStorage::indexFilePath() const

@@ -35,4 +35,9 @@ struct KeyValuePair
 
 		return true;
 	}
+
+	bool valid() const
+	{
+		return key != Key{};
+	}
 };

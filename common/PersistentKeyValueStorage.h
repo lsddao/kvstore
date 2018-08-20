@@ -24,6 +24,6 @@ private:
 	bool storeIndex();
 
 private:
-	QFile _persistentStorageFile;
+	mutable QFile _persistentStorageFile;
 	std::map<uint, qint64> _index;
 };
