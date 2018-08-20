@@ -10,5 +10,5 @@ public:
 	virtual void remove(const QString& key) = 0;
 	virtual int count() = 0;
 
-	virtual ~IKeyValueProvider() {}
+	virtual ~IKeyValueProvider() = default;
 };
