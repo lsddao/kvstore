@@ -7,14 +7,14 @@
 
 class Server : public QTcpServer
 {
-    Q_OBJECT
+	Q_OBJECT
 
 public:
-    Server(QObject *parent = 0);
+	Server(QObject *parent = 0);
 	~Server();
 
 protected:
-    void incomingConnection(qintptr socketDescriptor) override;
+	void incomingConnection(qintptr socketDescriptor) override;
 
 protected slots:
 	void printStats();

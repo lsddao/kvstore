@@ -4,11 +4,15 @@
 
 #include <QHash>
 
+#include <memory>
+
 class LocalKeyValueProvider : public IKeyValueProvider
 {
 public:
 	LocalKeyValueProvider(unsigned int maxMemoryMB = 10);
-	~LocalKeyValueProvider();
+	~LocalKeyValueProvider() override;
+
+	void setUnderlyingProvider(std::unique_ptr<IKeyValueProvider>&& underlyingProvider);
 
 	QString value(const QString& key) const override;
 	void insert(const QString& key, const QString& val) override;
@@ -17,5 +21,6 @@ public:
 
 private:
 	const unsigned int _maxMemory;
-	QHash<QString, QString> _map;
+	mutable QHash<QString, QString> _map;
+	std::unique_ptr<IKeyValueProvider> _underlyingProvider;
 };

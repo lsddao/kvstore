@@ -1,4 +1,4 @@
-#include <QCoreApplication> 
+#include <QCoreApplication>
 #include <QtCore>
 
 #include <stdlib.h>
@@ -7,7 +7,7 @@
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication app(argc, argv);
+	QCoreApplication app(argc, argv);
 
 	QString hostAddr("127.0.0.1");
 	quint16 port = 0;
@@ -33,5 +33,5 @@ int main(int argc, char *argv[])
 
 	qInfo() << "The server is running on " << server.serverAddress().toString() << ":" << server.serverPort();
 
-    return app.exec();
+	return app.exec();
 }
