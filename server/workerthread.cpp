@@ -93,9 +93,12 @@ void WorkerThread::prepareResponse()
 
 void WorkerThread::sendResponse()
 {
-	_strm->startTransaction();
-	*_strm.data() << response;
-	_strm->commitTransaction();
+	do
+	{
+		_strm->startTransaction();
+		*_strm.data() << response;
+	}
+	while (!_strm->commitTransaction());
 }
 
 void WorkerThread::respondError(const QString& str)

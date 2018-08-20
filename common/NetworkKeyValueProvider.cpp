@@ -50,11 +50,14 @@ void NetworkKeyValueProvider::readResponse() const
 {
 	response.clear();
 
-	tcpSocket->waitForReadyRead();
-
-	strm.startTransaction();
-	strm >> response;
-	strm.commitTransaction();
+	do
+	{
+		if (!tcpSocket->waitForReadyRead())
+			throw std::exception("waitForReadyRead failed");
+		strm.startTransaction();
+		strm >> response;
+	}
+	while (!strm.commitTransaction());
 
 	if (response["type"] != "response")
 		throw std::exception("invalid response type from the server");
