@@ -9,7 +9,7 @@ Server::Server(QObject *parent)
 	: QTcpServer(parent)
 	, _store(new LocalKeyValueProvider)
 {
-	static_cast<LocalKeyValueProvider*>(_store.get())->setUnderlyingProvider(std::make_unique<PersistentKeyValueStorage>());
+	static_cast<LocalKeyValueProvider*>(_store.data())->setUnderlyingProvider(std::make_unique<PersistentKeyValueStorage>());
 
 	QTimer* timer = new QTimer(this);
 	connect(timer, &QTimer::timeout, this, &Server::printStats);
