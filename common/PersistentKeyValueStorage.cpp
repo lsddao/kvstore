@@ -5,6 +5,7 @@
 #include <QFileInfo>
 
 #include <assert.h>
+#include <type_traits>
 
 PersistentKeyValueStorage::PersistentKeyValueStorage(const QString& storageFileName /*= "storage.db"*/) :
 	_persistentStorageFile(storageFileName)
@@ -64,7 +65,7 @@ bool PersistentKeyValueStorage::loadIndex()
 	// Reading the storage index
 	while(!indexFile.atEnd())
 	{
-		decltype(_index)::value_type indexEntry;
+		std::pair<std::remove_cv<decltype(_index)::value_type::first_type>::type, decltype(_index)::value_type::second_type> indexEntry;
 		if (indexFile.read((char*)&indexEntry.first, sizeof(indexEntry.first)) != sizeof(indexEntry.first))
 		{
 			qInfo() << "Error reading index hash from" << indexFile.fileName() << ":" << indexFile.errorString();
@@ -108,14 +109,14 @@ bool PersistentKeyValueStorage::storeIndex()
 
 	for (const auto& indexEntry: _index)
 	{
-		if (indexFile.write((char*)&indexEntry.first, sizeof(indexEntry.first)) != sizeof(indexEntry.first))
+		if (indexFile.write((const char*)&indexEntry.first, sizeof(indexEntry.first)) != sizeof(indexEntry.first))
 		{
 			qInfo() << "Error writing index hash to" << indexFile.fileName() << ":" << indexFile.errorString();
 			assert(false);
 			return false;
 		}
 
-		if (indexFile.read((char*)&indexEntry.second, sizeof(indexEntry.second)) != sizeof(indexEntry.second))
+		if (indexFile.write((const char*)&indexEntry.second, sizeof(indexEntry.second)) != sizeof(indexEntry.second))
 		{
 			qInfo() << "Error writing index offset to" << indexFile.fileName() << ":" << indexFile.errorString();
 			assert(false);
