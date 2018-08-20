@@ -2,6 +2,7 @@
 #include "workerthread.h"
 #include "../common/LocalKeyValueProvider.h"
 #include "../common/PersistentKeyValueStorage.h"
+#include "utils.h"
 
 #include <QTimer>
 
@@ -22,17 +23,18 @@ Server::~Server()
 
 void Server::incomingConnection(qintptr socketDescriptor)
 {
-	qInfo() << "incomingConnection at socket" << socketDescriptor;
+	utils::logInfo(QString("IncomingConnection at socket %1").arg(socketDescriptor));
 
 	WorkerThread *th = new WorkerThread(socketDescriptor, _store.data());
 	connect(th, &WorkerThread::finished, th, &WorkerThread::deleteLater);
-	connect(th, &WorkerThread::finished, [th]() { qDebug() << "thread" << th << "terminated"; });
+	connect(th, &WorkerThread::finished, [th]()  { qDebug() << "Thread" << th << "terminated";	});
 	connect(th, &WorkerThread::error, [](QTcpSocket::SocketError err) { qCritical() << "socket error" << err; });
 
 	th->start();
+	qDebug() << "Thread" << th << "started";
 }
 
 void Server::printStats()
 {
-	qInfo() << "Server stats:" << _store->count() << "items in cache";
+	utils::logInfo(QString("Server stats: %1 items in cache").arg(_store->count()));
 }

@@ -1,9 +1,7 @@
 #include <QCoreApplication>
-#include <QtCore>
-
-#include <stdlib.h>
 
 #include "server.h"
+#include "utils.h"
 
 int main(int argc, char *argv[])
 {
@@ -27,11 +25,11 @@ int main(int argc, char *argv[])
 	Server server;
 	if (!server.listen(QHostAddress(hostAddr), port))
 	{
-		qCritical() << QString("Unable to start the server: %1.").arg(server.errorString());
+		utils::logCritical(QString("Unable to start the server: %1.").arg(server.errorString()));
 		return -1;
 	}
 
-	qInfo() << "The server is running on " << server.serverAddress().toString() << ":" << server.serverPort();
+	utils::logInfo(QString("Server is running on %1:%2").arg(server.serverAddress().toString()).arg(server.serverPort()));
 
 	return app.exec();
 }
