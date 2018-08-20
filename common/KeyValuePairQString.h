@@ -2,6 +2,8 @@
 
 #include <QTextStream>
 
+using KeyValuePairQString = KeyValuePair<QString, QString>;
+
 namespace detail {
 	inline bool readString(QIODevice& device, QString& str)
 	{
@@ -38,13 +40,13 @@ namespace detail {
 }
 
 template<>
-inline bool KeyValuePair<QString, QString>::write(QIODevice& device)
+inline bool KeyValuePairQString::write(QIODevice& device)
 {
 	return detail::writeString(device, key) && detail::writeString(device, value);
 }
 
 template<>
-inline bool KeyValuePair<QString, QString>::read(QIODevice& device)
+inline bool KeyValuePairQString::read(QIODevice& device)
 {
 	if (!detail::readString(device, key) || !detail::readString(device, key))
 	{
@@ -57,4 +59,8 @@ inline bool KeyValuePair<QString, QString>::read(QIODevice& device)
 	return true;
 }
 
-using KeyValuePairQString = KeyValuePair<QString, QString>;
+template<>
+size_t KeyValuePairQString::spaceRequired() const
+{
+	return key.length() * 2 /* QChar represents a 2-byte Unicode code point */ + 1 /* null-terminator */ + value.length() * 2 + 1;
+}

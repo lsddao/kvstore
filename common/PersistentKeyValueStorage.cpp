@@ -52,23 +52,24 @@ void PersistentKeyValueStorage::insert(const QString& key, const QString& val)
 {
 	KeyValuePairQString kv{key, val};
 	const auto indexEntry = _index.find(kv.keyHash());
-	const bool updatingExistingEntry = indexEntry == _index.end();
-	const qint64 pos = updatingExistingEntry ? _persistentStorageFile.size() : indexEntry->second;
 
-	if (!_persistentStorageFile.seek(pos))
+	const auto endPos = _persistentStorageFile.size();
+	if (!_persistentStorageFile.seek(endPos))
 	{
-		qInfo() << "Seek to the location of key/value entry insertion" << pos << "for key" << key << "failed:" << _persistentStorageFile.errorString();
+		qInfo() << "Seek to the location of key/value entry insertion" << endPos << "for key" << key << "failed:" << _persistentStorageFile.errorString();
 		return;
 	}
 
 	if (!kv.write(_persistentStorageFile))
 	{
-		qInfo() << "Writing key/value entry for key" << key << "failed at location" << pos << "failed:" << _persistentStorageFile.errorString();
+		qInfo() << "Writing key/value entry for key" << key << "failed at location" << endPos << "failed:" << _persistentStorageFile.errorString();
 		return;
 	}
 
-	if (updatingExistingEntry)
-		_index[kv.keyHash()] = pos;
+	if (indexEntry != _index.end())
+		indexEntry->second = endPos;
+	else
+		_index[kv.keyHash()] = endPos;
 }
 
 void PersistentKeyValueStorage::remove(const QString& key)

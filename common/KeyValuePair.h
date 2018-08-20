@@ -9,7 +9,7 @@ struct KeyValuePair
 	Key key;
 	Value value;
 
-	uint keyHash()
+	uint keyHash() const
 	{
 		return qHash(key);
 	}
@@ -39,5 +39,10 @@ struct KeyValuePair
 	bool valid() const
 	{
 		return key != Key{};
+	}
+
+	size_t spaceRequired() const
+	{
+		return sizeof(key) + sizeof(value);
 	}
 };
