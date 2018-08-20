@@ -69,7 +69,15 @@ void PersistentKeyValueStorage::insert(const QString& key, const QString& val)
 
 void PersistentKeyValueStorage::remove(const QString& key)
 {
+	KeyValuePairQString kv{key, {}};
+	const auto indexEntry = _index.find(kv.keyHash());
+	if (indexEntry == _index.end())
+	{
+		qInfo() << "Attempting to remove non-existing key" << key;
+		return;
+	}
 
+	_index.erase(indexEntry);
 }
 
 int PersistentKeyValueStorage::count()
