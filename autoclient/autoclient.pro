@@ -1,6 +1,10 @@
 CONFIG += console
-QT += network testlib
-QT -= gui
+QT = core network testlib
+
+win32-msvc*{
+	QMAKE_CXXFLAGS += /MP
+	QMAKE_CXXFLAGS_WARN_ON = /W4
+}
 
 HEADERS       = autoclient.h \
 				../common/NetworkKeyValueProvider.h \

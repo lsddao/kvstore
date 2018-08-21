@@ -2,11 +2,11 @@
 
 #include <QtNetwork>
 
-WorkerThread::WorkerThread(int socketDescriptor, IKeyValueProvider* store)
+WorkerThread::WorkerThread(qintptr socketDescriptor, IKeyValueProvider* store)
 	: _socketDescriptor(socketDescriptor)
 	, _store(store)
 {
-	
+
 }
 
 void WorkerThread::run()

@@ -17,10 +17,6 @@ Server::Server(QObject *parent)
 	timer->start(5000);
 }
 
-Server::~Server()
-{
-}
-
 void Server::incomingConnection(qintptr socketDescriptor)
 {
 	utils::logInfo(QString("IncomingConnection at socket %1").arg(socketDescriptor));

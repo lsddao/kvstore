@@ -62,5 +62,5 @@ inline bool KeyValuePairQString::read(QIODevice& device)
 template<>
 size_t KeyValuePairQString::spaceRequired() const
 {
-	return key.length() * 2 /* QChar represents a 2-byte Unicode code point */ + 1 /* null-terminator */ + value.length() * 2 + 1;
+	return static_cast<size_t>(key.length() * 2 /* QChar represents a 2-byte Unicode code point */ + 1 /* null-terminator */ + value.length() * 2 + 1);
 }

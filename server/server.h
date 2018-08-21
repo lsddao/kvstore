@@ -10,13 +10,13 @@ class Server : public QTcpServer
 	Q_OBJECT
 
 public:
-	Server(QObject *parent = 0);
-	~Server();
+	Server(QObject *parent = nullptr);
+	~Server() override = default;
 
 protected:
 	void incomingConnection(qintptr socketDescriptor) override;
 
-protected slots:
+protected:
 	void printStats();
 
 private:
