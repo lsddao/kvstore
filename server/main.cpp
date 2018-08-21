@@ -3,9 +3,40 @@
 #include "server.h"
 #include "utils.h"
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h> 
+
+BOOL CtrlHandler(DWORD fdwCtrlType)
+{
+	switch (fdwCtrlType)
+	{
+		// Handle the CTRL-C signal. 
+	case CTRL_C_EVENT:
+	case CTRL_CLOSE_EVENT:
+		QCoreApplication::exit(0);
+		return(TRUE);
+
+	// Pass other signals to the next handler. 
+	//case CTRL_BREAK_EVENT:
+	//	return FALSE;
+
+	//case CTRL_LOGOFF_EVENT:
+	//	return FALSE;
+
+	//case CTRL_SHUTDOWN_EVENT:
+	//	return FALSE;
+
+	default:
+		return FALSE;
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	QCoreApplication app(argc, argv);
+
+	if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE))
+		utils::logCritical("Could not set control handler");
 
 	QString hostAddr("127.0.0.1");
 	quint16 port = 0;
