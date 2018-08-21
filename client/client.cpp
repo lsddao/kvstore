@@ -97,7 +97,7 @@ void Client::onConnect()
 {
 	try
 	{
-		_provider = new NetworkKeyValueProvider(hostCombo->currentText(), portLineEdit->text().toInt());
+		_provider = new NetworkKeyValueProvider(hostCombo->currentText(), portLineEdit->text().toUShort());
 		log("connected");
 		_connect->setDisabled(true);
 	}
