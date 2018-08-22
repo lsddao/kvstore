@@ -28,6 +28,20 @@ void Client::initTestCase()
 
 void Client::initKeyProvider()
 {
+	if (QCoreApplication::arguments().size() < 2)
+		initLocalProvider();
+	else
+		initNetworkProvider();
+}
+
+void Client::initLocalProvider()
+{
+	qInfo() << "initializing local provider";
+	_store.reset(new LocalKeyValueProvider());
+}
+
+void Client::initNetworkProvider()
+{
 	QString hostAddr("127.0.0.1");
 	quint16 port = 0;
 
@@ -51,6 +65,7 @@ void Client::initKeyProvider()
 			_maxIterations = 1000;
 	}
 
+	qInfo() << "initializing network provider";
 	_store.reset(new NetworkKeyValueProvider(hostAddr, port));
 
 	qInfo() << "connected to a server at " << hostAddr << ":" << port;
@@ -180,6 +195,6 @@ int main(int argc, char *argv[])
 	Client tc;
 	QTEST_SET_MAIN_SOURCE_PATH
 
-		QStringList argvTest{ argv[0], "-nocrashhandler" };
+	QStringList argvTest{ argv[0], "-nocrashhandler" };
 	return QTest::qExec(&tc, argvTest);
 }

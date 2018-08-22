@@ -21,6 +21,8 @@ private slots:
 
 private:
 	void initKeyProvider();
+	void initLocalProvider();
+	void initNetworkProvider();
 
 	QString randomString(const int length);
 	QString randomKey();

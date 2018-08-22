@@ -9,7 +9,12 @@ win32-msvc*{
 HEADERS       = autoclient.h \
 				../common/NetworkKeyValueProvider.h \
 				../common/LocalKeyValueProvider.h \
+				../common/PersistentKeyValueStorage.h \
+				../common/KeyValuePair.h \
+				../common/KeyValuePairQString.h \
 				../common/KeyValueProvider.h
+				
 SOURCES       = autoclient.cpp \
 				../common/NetworkKeyValueProvider.cpp \
-				../common/LocalKeyValueProvider.cpp
+				../common/LocalKeyValueProvider.cpp \
+				../common/PersistentKeyValueStorage.cpp
