@@ -11,6 +11,9 @@ void Client::initTestCase()
 {
 	_keyPrefix = randomString(3);
 
+	if (QCoreApplication::arguments().size() > 1)
+		_local = false;
+
 	try
 	{
 		initKeyProvider();
@@ -29,7 +32,7 @@ void Client::initTestCase()
 
 void Client::initKeyProvider()
 {
-	if (QCoreApplication::arguments().size() < 2)
+	if (_local)
 		initLocalProvider();
 	else
 		initNetworkProvider();
@@ -48,20 +51,23 @@ void Client::initNetworkProvider()
 
 	QStringList args = QCoreApplication::arguments();
 	if (args.size() > 1)
-		hostAddr = args[1];
-
+	{
+		QStringList hostPort = args[1].split(":");
+		if (hostPort.size() > 0)
+			hostAddr = hostPort[0];
+		if (hostPort.size() > 1)
+		{
+			bool ok;
+			port = hostPort[1].toUShort(&ok);
+			if (!ok)
+				port = 50000;
+		}
+	}
+		
 	if (args.size() > 2)
 	{
 		bool ok;
-		port = args[2].toUShort(&ok);
-		if (!ok)
-			port = 50000;
-	}
-
-	if (args.size() > 3)
-	{
-		bool ok;
-		_maxIterations = args[3].toInt(&ok);
+		_maxIterations = args[2].toInt(&ok);
 		if (!ok)
 			_maxIterations = 1000;
 	}
@@ -99,20 +105,29 @@ void Client::test_InsertDelete()
 	}
 }
 
-void Client::benchmark_InsertDelete_MT()
-{
-	QList<QFuture<void>> futures;
-
-	for (int tidx = 0; tidx < 4; ++tidx)
-		futures << QtConcurrent::run([&]() { benchmark_InsertDelete(); });
-
-	for (auto& it : futures)
-		it.waitForFinished();
-}
-
 void Client::benchmark_InsertDelete()
 {
-	test_InsertReadDelete(_maxIterations, _maxIterations * 10000);
+	int nThreads = 1;
+	if (_local)
+	{
+		nThreads = 4;
+		qInfo() << "testing in" << nThreads << "thread(s)";
+
+		QList<QFuture<void>> futures;
+
+		for (int tidx = 0; tidx < nThreads; ++tidx)
+			futures << QtConcurrent::run([&]() { test_InsertReadDelete(_maxIterations, _maxIterations * 10000); });
+
+		for (auto& it : futures)
+			it.waitForFinished();
+	}
+	else
+	{
+		nThreads = 1;
+		qInfo() << "testing in" << nThreads << "thread(s)";
+
+		test_InsertReadDelete(_maxIterations, _maxIterations * 10);
+	}
 }
 
 void Client::test_InsertReadDelete(const int nInserts, const int nReads)

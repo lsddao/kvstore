@@ -14,7 +14,6 @@ private slots:
 	void test_Insert();
 	void test_InsertDelete();
 	void benchmark_InsertDelete();
-	void benchmark_InsertDelete_MT();
 	
 	void cleanupTestCase();
 
@@ -34,4 +33,5 @@ private:
 	QScopedPointer<IKeyValueProvider> _store;
 	QString _keyPrefix;
 	int _maxIterations{1000};
+	bool _local{ true };
 };
