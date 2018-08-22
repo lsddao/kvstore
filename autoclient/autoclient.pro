@@ -1,5 +1,5 @@
 CONFIG += console
-QT = core network testlib
+QT = core network testlib concurrent
 
 win32-msvc*{
 	QMAKE_CXXFLAGS += /MP

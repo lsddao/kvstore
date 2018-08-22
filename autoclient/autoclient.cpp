@@ -1,6 +1,7 @@
 #include <QtTest>
 #include <QRandomGenerator>
 #include <QTime>
+#include <QtConcurrent>
 
 #include "autoclient.h"
 #include "../common/LocalKeyValueProvider.h"
@@ -98,43 +99,59 @@ void Client::test_InsertDelete()
 	}
 }
 
+void Client::benchmark_InsertDelete_MT()
+{
+	QList<QFuture<void>> futures;
+
+	for (int tidx = 0; tidx < 4; ++tidx)
+		futures << QtConcurrent::run([&]() { benchmark_InsertDelete(); });
+
+	for (auto& it : futures)
+		it.waitForFinished();
+}
+
 void Client::benchmark_InsertDelete()
+{
+	test_InsertReadDelete(_maxIterations, _maxIterations * 10000);
+}
+
+void Client::test_InsertReadDelete(const int nInserts, const int nReads)
 {
 	try
 	{
-		qInfo() << "performing insert" << _maxIterations << "times";
-		QStringList keys, values;
-		while (keys.count() < _maxIterations)
-		{
-			const auto key = randomKey();
-			const auto value = randomKey();
+		qInfo() << "performing insert" << nInserts  << "times, read" << nReads << "times, then delete everything which was added";
 
-			if (keys.contains(key) || values.contains(value))
-				continue;
+		const auto keysAndValues = randomKeysAndValues(nInserts);
 
-			keys.push_back(key);
-			values.push_back(value);
-		}
-
-		const auto initialKeyCount = _store->count();
-
+		//const auto initialKeyCount = _store->count();
 
 		QTime timer;
 		timer.start();
-		for (int i = 0; i < _maxIterations; ++i)
-		{
-			_store->insert(keys[i], values[i]);
-		}
-		qInfo() << "INSERT performance:" << _maxIterations * 1000 / timer.elapsed() << "insertions per second";
+
+		for (int i = 0; i < keysAndValues.count(); ++i)
+			_store->insert(keysAndValues[i].first, keysAndValues[i].second);
+
+		if (timer.elapsed() > 0)
+			qInfo() << "INSERT performance:" << keysAndValues.count() / timer.elapsed() << "insertions per ms";
 
 		timer.restart();
-		for (int i = 0; i < _maxIterations; ++i)
+		for (int i = 0; i < nReads; ++i)
 		{
-			_store->remove(keys[i]);
+			int idx = nReads % keysAndValues.count();
+			QVERIFY(_store->value(keysAndValues[idx].first) == keysAndValues[idx].second);
 		}
-		qInfo() << "REMOVE performance:" << _maxIterations * 1000 / timer.elapsed() << "deletions per second";
+		
+		if (timer.elapsed() > 0)
+			qInfo() << "READ performance:" << nReads / timer.elapsed() << "reads per ms";
 
-		QVERIFY(_store->count() == initialKeyCount);
+		timer.restart();
+		for (int i = 0; i < keysAndValues.count(); ++i)
+			_store->remove(keysAndValues[i].first);
+
+		if (timer.elapsed() > 0)
+			qInfo() << "REMOVE performance:" << keysAndValues.count() / timer.elapsed() << "deletions per ms";
+
+		//QVERIFY(_store->count() == initialKeyCount);
 	}
 	catch (const std::exception& ex)
 	{
@@ -185,12 +202,20 @@ QString Client::randomString(const int length)
 
 QString Client::randomKey()
 {
-	return _keyPrefix + "_" + randomString(12);
+	return QString("%1_%2").arg(_keyPrefix, randomString(12));
 }
 
 QString Client::randomValue()
 {
 	return randomString(QRandomGenerator::global()->bounded(1, 1024));
+}
+
+QList<QPair<QString, QString>> Client::randomKeysAndValues(const int count)
+{
+	QList<QPair<QString, QString>> res;
+	for (int i = 0; i < count; ++i)
+		res.append(qMakePair(randomKey(), randomValue()));
+	return res;
 }
 
 int main(int argc, char *argv[])

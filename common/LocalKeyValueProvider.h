@@ -3,6 +3,7 @@
 #include "KeyValueProvider.h"
 
 #include <QHash>
+#include <QReadWriteLock>
 
 #include <memory>
 
@@ -23,4 +24,5 @@ private:
 	const unsigned int _maxMemory;
 	mutable QHash<QString, QString> _map;
 	std::unique_ptr<IKeyValueProvider> _underlyingProvider;
+	mutable QReadWriteLock _lock;
 };
