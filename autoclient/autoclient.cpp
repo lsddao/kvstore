@@ -116,6 +116,9 @@ void Client::benchmark_InsertDelete()
 			values.push_back(value);
 		}
 
+		const auto initialKeyCount = _store->count();
+
+
 		QTime timer;
 		timer.start();
 		for (int i = 0; i < _maxIterations; ++i)
@@ -130,6 +133,8 @@ void Client::benchmark_InsertDelete()
 			_store->remove(keys[i]);
 		}
 		qInfo() << "REMOVE performance:" << _maxIterations * 1000 / timer.elapsed() << "deletions per second";
+
+		QVERIFY(_store->count() == initialKeyCount);
 	}
 	catch (const std::exception& ex)
 	{
