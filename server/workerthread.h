@@ -30,6 +30,7 @@ protected:
 	void respondError(const QString& str);
 	void respondOk(const QString& strDetails = QString::null);
 	void respondValue(const QString& key, const QString& val, const QString& strDetails = QString());
+	void respondCount(int count);
 
 private:
 	QScopedPointer<QTcpSocket> _socket;

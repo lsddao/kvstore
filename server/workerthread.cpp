@@ -36,22 +36,31 @@ void WorkerThread::onReadyRead()
 	try
 	{
 		requireFieldIs("type", "request");
-		requireField("key");
 
 		if (request["method"] == "put")
 		{
+			requireField("key");
+
 			_store->insert(request["key"], request["value"]);
 			respondOk("inserted");
 		}
 		else if (request["method"] == "get")
 		{
+			requireField("key");
+
 			const QString val = _store->value(request["key"]);
 			respondValue(request["key"], val, val.isEmpty() ? QString("empty") : QString());
 		}
 		else if (request["method"] == "delete")
 		{
+			requireField("key");
+
 			_store->remove(request["key"]);
 			respondOk("deleted");
+		}
+		else if (request["method"] == "count")
+		{
+			respondCount(_store->count());
 		}
 		else
 		{
@@ -122,9 +131,16 @@ void WorkerThread::respondValue(const QString& key, const QString& val, const QS
 	prepareResponse();
 	response["key"] = key;
 	response["value"] = val;
-	response["value"] = val;
 	response["error"] = "ok";
 	if (!strDetails.isEmpty())
 		response["details"] = strDetails;
+	sendResponse();
+}
+
+void WorkerThread::respondCount(int count)
+{
+	prepareResponse();
+	response["value"] = QString::number(count);
+	response["error"] = "ok";
 	sendResponse();
 }

@@ -14,7 +14,7 @@ public:
 	QString value(const QString& key) const override;
 	void insert(const QString& key, const QString& val) override;
 	void remove(const QString& key) override;
-	int count() override { return -1; }
+	int count() override;
 	
 	QString lastResponseDetails() const;
 	QString lastResponseError() const;

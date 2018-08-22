@@ -78,6 +78,20 @@ void NetworkKeyValueProvider::remove(const QString& key)
 	readResponse();
 }
 
+int NetworkKeyValueProvider::count()
+{
+	strm.startTransaction();
+	QMap<QString, QString> data;
+	data["type"] = "request";
+	data["method"] = "count";
+	strm << data;
+	strm.commitTransaction();
+
+	readResponse();
+
+	return response["value"].toInt();
+}
+
 QString NetworkKeyValueProvider::lastResponseDetails() const
 {
 	return response["details"];

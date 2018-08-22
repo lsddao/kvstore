@@ -1,5 +1,6 @@
 #include <QtTest>
 #include <QRandomGenerator>
+#include <QTime>
 
 #include "autoclient.h"
 #include "../common/LocalKeyValueProvider.h"
@@ -27,8 +28,6 @@ void Client::initTestCase()
 
 void Client::initKeyProvider()
 {
-	//_store.reset(new LocalKeyValueProvider);
-
 	QString hostAddr("127.0.0.1");
 	quint16 port = 0;
 
@@ -84,6 +83,54 @@ void Client::test_InsertDelete()
 	}
 }
 
+void Client::benchmark_InsertDelete()
+{
+	try
+	{
+		qInfo() << "performing insert" << _maxIterations << "times";
+		QStringList keys, values;
+		while (keys.count() < _maxIterations)
+		{
+			const auto key = randomKey();
+			const auto value = randomKey();
+
+			if (keys.contains(key) || values.contains(value))
+				continue;
+
+			keys.push_back(key);
+			values.push_back(value);
+		}
+
+		const auto initialKeyCount = _store->count();
+
+
+		QTime timer;
+		timer.start();
+		for (int i = 0; i < _maxIterations; ++i)
+		{
+			_store->insert(keys[i], values[i]);
+		}
+		qInfo() << "INSERT performance:" << _maxIterations * 1000 / timer.elapsed() << "insertions per second";
+
+		timer.restart();
+		for (int i = 0; i < _maxIterations; ++i)
+		{
+			_store->remove(keys[i]);
+		}
+		qInfo() << "REMOVE performance:" << _maxIterations * 1000 / timer.elapsed() << "deletions per second";
+
+		QVERIFY(_store->count() == initialKeyCount);
+	}
+	catch (const std::exception& ex)
+	{
+		QFAIL(ex.what());
+	}
+	catch (...)
+	{
+		QFAIL("UNKNOWN ERROR");
+	}
+}
+
 void Client::test_Insert()
 {
 	try
@@ -115,6 +162,7 @@ void Client::cleanupTestCase()
 QString Client::randomString(const int length)
 {
 	QString res;
+	res.reserve(length);
 	for (int i = 0; i < length; ++i)
 		res.append(static_cast<char>(QRandomGenerator::global()->bounded(32, 127)));
 	return res;
@@ -132,9 +180,11 @@ QString Client::randomValue()
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication app(argc, argv);
-    app.setAttribute(Qt::AA_Use96Dpi, true);
-    Client tc;
-    QTEST_SET_MAIN_SOURCE_PATH
-    return QTest::qExec(&tc);
+	QCoreApplication app(argc, argv);
+	app.setAttribute(Qt::AA_Use96Dpi, true);
+	Client tc;
+	QTEST_SET_MAIN_SOURCE_PATH
+
+		QStringList argvTest{ argv[0], "-nocrashhandler" };
+	return QTest::qExec(&tc, argvTest);
 }
