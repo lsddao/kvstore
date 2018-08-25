@@ -20,8 +20,8 @@ public:
 private:
 	QString indexFilePath() const;
 
-	bool loadIndex();
-	bool storeIndex();
+	void loadIndex();
+	void storeIndex();
 
 private:
 	mutable QFile _persistentStorageFile;

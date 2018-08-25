@@ -95,61 +95,51 @@ QString PersistentKeyValueStorage::indexFilePath() const
 	return QFileInfo(_persistentStorageFile.fileName()).canonicalPath() + "/index.db";
 }
 
-bool PersistentKeyValueStorage::loadIndex()
+void PersistentKeyValueStorage::loadIndex()
 {
 	QFile indexFile(indexFilePath());
-	if (!indexFile.open(QFile::ReadOnly) && _persistentStorageFile.size() != 0)
+	if (!indexFile.open(QFile::ReadOnly))
 	{
 		qInfo() << "Failed to open storage index file" << indexFile.fileName() << "for reading, error:" << indexFile.errorString();
-		assert(indexFile.isOpen());
-		return false;
+		return;
 	}
-	else if (_persistentStorageFile.size() == 0)
-		return false; // No index to read because the storage file is empty.
 
-	// Reading the storage index
 	while(!indexFile.atEnd())
 	{
 		std::pair<std::remove_cv<decltype(_index)::value_type::first_type>::type, decltype(_index)::value_type::second_type> indexEntry;
 		if (indexFile.read((char*)&indexEntry.first, sizeof(indexEntry.first)) != sizeof(indexEntry.first))
 		{
 			qInfo() << "Error reading index hash from" << indexFile.fileName() << ":" << indexFile.errorString();
-			assert(false);
-			return false;
+			return;
 		}
 
 		if (indexFile.read((char*)&indexEntry.second, sizeof(indexEntry.second)) != sizeof(indexEntry.second))
 		{
 			qInfo() << "Error reading index offset from" << indexFile.fileName() << ":" << indexFile.errorString();
-			assert(false);
-			return false;
+			return;
 		}
 
 		const auto insertionResult = _index.insert(indexEntry);
 		if (!insertionResult.second)
 		{
 			qInfo() << "Duplicate entry in the index. Key hash:" << indexEntry.first << ", offset in the storage:" << indexEntry.second;
-			assert(insertionResult.second);
 		}
 	}
-
-	return true;
 }
 
-bool PersistentKeyValueStorage::storeIndex()
+void PersistentKeyValueStorage::storeIndex()
 {
 	if (_index.empty())
 	{
 		assert(_persistentStorageFile.size() == 0);
-		return true;
+		return;
 	}
 
 	QFile indexFile(indexFilePath());
 	if (!indexFile.open(QFile::WriteOnly))
 	{
 		qInfo() << "Failed to open storage index file" << indexFile.fileName() << "for writing, error:" << indexFile.errorString();
-		assert(indexFile.isOpen());
-		return false;
+		return;
 	}
 
 	for (const auto& indexEntry: _index)
@@ -157,17 +147,13 @@ bool PersistentKeyValueStorage::storeIndex()
 		if (indexFile.write((const char*)&indexEntry.first, sizeof(indexEntry.first)) != sizeof(indexEntry.first))
 		{
 			qInfo() << "Error writing index hash to" << indexFile.fileName() << ":" << indexFile.errorString();
-			assert(false);
-			return false;
+			return;
 		}
 
 		if (indexFile.write((const char*)&indexEntry.second, sizeof(indexEntry.second)) != sizeof(indexEntry.second))
 		{
 			qInfo() << "Error writing index offset to" << indexFile.fileName() << ":" << indexFile.errorString();
-			assert(false);
-			return false;
+			return;
 		}
 	}
-
-	return true;
 }

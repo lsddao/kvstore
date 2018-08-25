@@ -4,16 +4,13 @@
 
 #include <QHash>
 #include <QReadWriteLock>
-
-#include <memory>
+#include <QScopedPointer>
 
 class LocalKeyValueProvider : public IKeyValueProvider
 {
 public:
-	LocalKeyValueProvider(unsigned int maxMemoryMB = 10);
+	LocalKeyValueProvider(unsigned int maxMemoryMB = 10, IKeyValueProvider* persistentStorage = nullptr);
 	~LocalKeyValueProvider() override;
-
-	void setUnderlyingProvider(std::unique_ptr<IKeyValueProvider>&& underlyingProvider);
 
 	QString value(const QString& key) const override;
 	void insert(const QString& key, const QString& val) override;
@@ -23,6 +20,6 @@ public:
 private:
 	const unsigned int _maxMemory;
 	mutable QHash<QString, QString> _map;
-	std::unique_ptr<IKeyValueProvider> _underlyingProvider;
+	QScopedPointer<IKeyValueProvider> _persistentStorage;
 	mutable QReadWriteLock _lock;
 };

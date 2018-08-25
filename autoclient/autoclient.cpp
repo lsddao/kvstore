@@ -6,6 +6,7 @@
 #include "autoclient.h"
 #include "../common/LocalKeyValueProvider.h"
 #include "../common/NetworkKeyValueProvider.h"
+#include "../common/PersistentKeyValueStorage.h"
 
 void Client::initTestCase()
 {
@@ -41,7 +42,7 @@ void Client::initKeyProvider()
 void Client::initLocalProvider()
 {
 	qInfo() << "initializing local provider";
-	_store.reset(new LocalKeyValueProvider());
+	_store.reset(new LocalKeyValueProvider(10, new PersistentKeyValueStorage));
 }
 
 void Client::initNetworkProvider()
