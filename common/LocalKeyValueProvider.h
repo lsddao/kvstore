@@ -18,14 +18,14 @@ public:
 	int count() override;
 
 protected:
-	void insertToCache(const QString& key, const QString& val);
-	void removeFromCache(const QString& key);
+	void insertToCache(const QString& key, const QString& val) const;
+	void removeFromCache(const QString& key) const;
 
 	unsigned int usedMemory(const QString& key, const QString& val) const;
 
 private:
 	const unsigned int _maxMemory;
-	unsigned int _usedMemory{0};
+	mutable unsigned int _usedMemory{0};
 	mutable QHash<QString, QString> _map;
 	QScopedPointer<IKeyValueProvider> _persistentStorage;
 	mutable QReadWriteLock _lock;

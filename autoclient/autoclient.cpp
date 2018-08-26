@@ -17,8 +17,8 @@ void Client::initTestCase()
 
 	try
 	{
-		initKeyProvider();
-		QVERIFY(!_store.isNull());
+		//initKeyProvider();
+		//QVERIFY(!_store.isNull());
 	}
 	catch (const std::exception& ex)
 	{
@@ -28,11 +28,40 @@ void Client::initTestCase()
 	{
 		QFAIL("UNKNOWN ERROR");
 	}
-	
+}
+
+void Client::test_Persistense()
+{
+	try
+	{
+		initKeyProvider();
+
+		KeysAndValues keysAndValues = randomKeysAndValues(1000);
+		helper_InsertAll(_store.data(), keysAndValues);
+		helper_VerifyAll(_store.data(), keysAndValues);
+
+		initKeyProvider();
+
+		helper_VerifyAll(_store.data(), keysAndValues);
+		helper_DeleteAll(_store.data(), keysAndValues);
+		helper_VerifyAllEmpty(_store.data(), keysAndValues);
+
+		initKeyProvider();
+		helper_VerifyAllEmpty(_store.data(), keysAndValues);
+	}
+	catch (const std::exception& ex)
+	{
+		QFAIL(ex.what());
+	}
+	catch (...)
+	{
+		QFAIL("UNKNOWN ERROR");
+	}
 }
 
 void Client::initKeyProvider()
 {
+	_store.reset();
 	if (_local)
 		initLocalProvider();
 	else
@@ -64,14 +93,6 @@ void Client::initNetworkProvider()
 				port = 50000;
 		}
 	}
-		
-	if (args.size() > 2)
-	{
-		bool ok;
-		_maxIterations = args[2].toInt(&ok);
-		if (!ok)
-			_maxIterations = 1000;
-	}
 
 	qInfo() << "initializing network provider";
 	_store.reset(new NetworkKeyValueProvider(hostAddr, port));
@@ -79,21 +100,21 @@ void Client::initNetworkProvider()
 	qInfo() << "connected to a server at " << hostAddr << ":" << port;
 }
 
-void Client::test_InsertDelete()
+void Client::helper_InsertDelete(IKeyValueProvider* provider, const int nInserts)
 {
 	try
 	{
-		qInfo() << "performing put -> check -> delete -> check" << _maxIterations << "times";
+		qInfo() << "performing put -> check -> delete -> check" << nInserts << "times";
 
-		for (int i = 0; i < _maxIterations; ++i)
+		for (int i = 0; i < nInserts; ++i)
 		{
 			const QString key = randomKey();
 			const QString val = randomValue();
-			_store->insert(key, val);
-			QVERIFY(_store->value(key) == val);
+			provider->insert(key, val);
+			QVERIFY(provider->value(key) == val);
 
-			_store->remove(key);
-			QVERIFY(_store->value(key).isEmpty());
+			provider->remove(key);
+			QVERIFY(provider->value(key).isEmpty());
 		}
 	}
 	catch (const std::exception& ex) 
@@ -111,13 +132,13 @@ void Client::benchmark_InsertDelete()
 	int nThreads = 1;
 	if (_local)
 	{
-		nThreads = 4;
+		nThreads = 1;
 		qInfo() << "testing in" << nThreads << "thread(s)";
 
 		QList<QFuture<void>> futures;
 
 		for (int tidx = 0; tidx < nThreads; ++tidx)
-			futures << QtConcurrent::run([&]() { test_InsertReadDelete(_maxIterations, _maxIterations * 10000); });
+			futures << QtConcurrent::run([&]() { helper_InsertReadDelete(_store.data(), _maxIterations, _maxIterations * 10000); });
 
 		for (auto& it : futures)
 			it.waitForFinished();
@@ -127,25 +148,24 @@ void Client::benchmark_InsertDelete()
 		nThreads = 1;
 		qInfo() << "testing in" << nThreads << "thread(s)";
 
-		test_InsertReadDelete(_maxIterations, _maxIterations * 10);
+		helper_InsertReadDelete(_store.data(), _maxIterations, _maxIterations * 10);
 	}
 }
 
-void Client::test_InsertReadDelete(const int nInserts, const int nReads)
+void Client::helper_InsertReadDelete(IKeyValueProvider* provider, const int nInserts, const int nReads)
 {
 	try
 	{
 		qInfo() << "performing insert" << nInserts  << "times, read" << nReads << "times, then delete everything which was added";
 
-		const auto keysAndValues = randomKeysAndValues(nInserts);
+		KeysAndValues keysAndValues = randomKeysAndValues(nInserts);
 
 		//const auto initialKeyCount = _store->count();
 
 		QTime timer;
 		timer.start();
 
-		for (int i = 0; i < keysAndValues.count(); ++i)
-			_store->insert(keysAndValues[i].first, keysAndValues[i].second);
+		helper_InsertAll(provider, keysAndValues);
 
 		if (timer.elapsed() > 0)
 			qInfo() << "INSERT performance:" << keysAndValues.count() * 1000 / timer.elapsed() << "insertions/s";
@@ -154,15 +174,14 @@ void Client::test_InsertReadDelete(const int nInserts, const int nReads)
 		for (int i = 0; i < nReads; ++i)
 		{
 			int idx = nReads % keysAndValues.count();
-			QVERIFY(_store->value(keysAndValues[idx].first) == keysAndValues[idx].second);
+			QVERIFY(provider->value(keysAndValues[idx].first) == keysAndValues[idx].second);
 		}
 		
 		if (timer.elapsed() > 0)
 			qInfo() << "READ performance:" << nReads * 1000 / timer.elapsed()  << "reads/s";
 
 		timer.restart();
-		for (int i = 0; i < keysAndValues.count(); ++i)
-			_store->remove(keysAndValues[i].first);
+		helper_DeleteAll(provider, keysAndValues);
 
 		if (timer.elapsed() > 0)
 			qInfo() << "REMOVE performance:" << keysAndValues.count() * 1000 / timer.elapsed() << "deletions/s";
@@ -179,17 +198,41 @@ void Client::test_InsertReadDelete(const int nInserts, const int nReads)
 	}
 }
 
-void Client::test_Insert()
+void Client::helper_InsertAll(IKeyValueProvider* provider, const KeysAndValues& container)
+{
+	for (const QPair<QString, QString>& kv : container)
+		provider->insert(kv.first, kv.second);
+}
+
+void Client::helper_VerifyAll(IKeyValueProvider* provider, const KeysAndValues& container)
+{
+	for (const QPair<QString, QString>& kv : container)
+		QVERIFY(provider->value(kv.first) == kv.second);
+}
+
+void Client::helper_DeleteAll(IKeyValueProvider* provider, const KeysAndValues& container)
+{
+	for (const QPair<QString, QString>& kv : container)
+		provider->remove(kv.first);
+}
+
+void Client::helper_VerifyAllEmpty(IKeyValueProvider* provider, const KeysAndValues& container)
+{
+	for (const QPair<QString, QString>& kv : container)
+		QVERIFY(provider->value(kv.first).isEmpty());
+}
+
+void Client::helper_Insert(IKeyValueProvider* provider, const int nInserts)
 {
 	try
 	{
-		qInfo() << "performing put -> check" << _maxIterations << "times";
+		qInfo() << "performing put -> check" << nInserts << "times";
 
-		for (int i = 0; i < _maxIterations; ++i)
+		for (int i = 0; i < nInserts; ++i)
 		{
 			const QString key = randomKey();
 			const QString val = randomValue();
-			_store->insert(key, val);
+			provider->insert(key, val);
 			QVERIFY(_store->value(key) == val);
 		}
 	}
@@ -226,9 +269,9 @@ QString Client::randomValue()
 	return randomString(QRandomGenerator::global()->bounded(1, 1024));
 }
 
-QList<QPair<QString, QString>> Client::randomKeysAndValues(const int count)
+KeysAndValues Client::randomKeysAndValues(const int count)
 {
-	QList<QPair<QString, QString>> res;
+	KeysAndValues res;
 	for (int i = 0; i < count; ++i)
 		res.append(qMakePair(randomKey(), randomValue()));
 	return res;

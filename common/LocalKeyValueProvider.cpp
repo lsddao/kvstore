@@ -24,42 +24,38 @@ QString LocalKeyValueProvider::value(const QString& key) const
 	if (it != _map.constEnd())
 		return *it;
 
-	return{};
+	if (!_persistentStorage)
+		return{};
 
-	//if (!_persistentStorage)
-	//	return{};
+	QString res = _persistentStorage->value(key);
+	_lock.tryLockForWrite();
+	insertToCache(key, res);
 
-	//const auto value = _persistentStorage->value(key);
-	//if (!value.isEmpty())
-	//{
-	//	_lock.tryLockForWrite();
-	//	_map[key] = value;
-	//}
-
-	//return value;
+	return res;
 }
 
 void LocalKeyValueProvider::insert(const QString& key, const QString& val)
-{
+{	
 	QWriteLocker l(&_lock);
 	insertToCache(key, val);
-	//if (_persistentStorage)
-	//	_persistentStorage->insert(key, val);
+	// TODO -> separate thread
+	if (_persistentStorage)
+		_persistentStorage->insert(key, val);
 }
 
 void LocalKeyValueProvider::remove(const QString& key)
 {
 	QWriteLocker l(&_lock);
 	removeFromCache(key);
-	//if (_persistentStorage)
-	//	_persistentStorage->remove(key);
+	// TODO -> separate thread
+	if (_persistentStorage)
+		_persistentStorage->remove(key);
 }
 
 int LocalKeyValueProvider::count()
 {
 	QReadLocker l(&_lock);
-
-	return /*_persistentStorage ? _persistentStorage->count() :*/ _map.size();
+	return _persistentStorage ? _persistentStorage->count() : _map.size();
 }
 
 unsigned int LocalKeyValueProvider::usedMemory(const QString& key, const QString& val) const
@@ -68,13 +64,16 @@ unsigned int LocalKeyValueProvider::usedMemory(const QString& key, const QString
 	return 2 * (key.capacity() + val.capacity());
 }
 
-void LocalKeyValueProvider::insertToCache(const QString& key, const QString& val)
+void LocalKeyValueProvider::insertToCache(const QString& key, const QString& val) const
 {
-	_map[key] = val;
-	_usedMemory += usedMemory(key, val);
+	if (!val.isEmpty())
+	{
+		_map[key] = val;
+		_usedMemory += usedMemory(key, val);
+	}
 }
 
-void LocalKeyValueProvider::removeFromCache(const QString& key)
+void LocalKeyValueProvider::removeFromCache(const QString& key) const
 {
 	auto it = _map.constFind(key);
 	if (it == _map.constEnd())

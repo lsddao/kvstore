@@ -1,19 +1,26 @@
 #include "PersistentKeyValueStorage.h"
-#include "KeyValuePairQString.h"
 
 #include <QDebug>
 #include <QFileInfo>
 
+#include <QByteArray>
+
 #include <assert.h>
-#include <type_traits>
+
+
+void checkDataStreamStatus(const QDataStream& strm)
+{
+	if (strm.status() != QDataStream::Ok)
+		throw std::exception(QString("Data stream status is %1: %2").arg(strm.status()).arg(strm.device() ? strm.device()->errorString() : "(no device)").toLatin1().constData());
+}
 
 PersistentKeyValueStorage::PersistentKeyValueStorage(const QString& storageFileName)
-	: _persistentStorageFile(storageFileName)
+	: _file(storageFileName)
 {
-	if (!_persistentStorageFile.open(QFile::ReadWrite))
+	if (!_file.open(QFile::ReadWrite))
 	{
-		qInfo() << "Failed to open storage file" << storageFileName << "for reading and writing, error:" << _persistentStorageFile.errorString();
-		assert(_persistentStorageFile.isOpen());
+		qInfo() << "Failed to open storage file" << storageFileName << "for reading and writing, error:" << _file.errorString();
+		assert(_file.isOpen());
 		return;
 	}
 
@@ -27,72 +34,47 @@ PersistentKeyValueStorage::~PersistentKeyValueStorage()
 
 QString PersistentKeyValueStorage::value(const QString& key) const
 {
-	KeyValuePairQString kv{key, {}};
-	const auto indexEntry = _index.find(kv.keyHash());
-	if (indexEntry == _index.end())
-		return {}; // No such key in the storage
-
-	assert(indexEntry->second < _persistentStorageFile.size());
-	if (!_persistentStorageFile.seek(indexEntry->second))
-	{
-		qInfo() << "Seek to the location of key/value entry" << indexEntry->second << "for key" << key << "failed:" << _persistentStorageFile.errorString();
+	auto it = _index.constFind(key);
+	if (it == _index.constEnd())
 		return {};
-	}
 
-	if (!kv.read(_persistentStorageFile))
-	{
-		qInfo() << "Reading key/value entry for key" << key << "failed at location" << indexEntry->second << "failed:" << _persistentStorageFile.errorString();
-		return {};
-	}
-
-	return kv.value;
+	const AllocationData& data = *it;
+	return read(data.pos);
 }
 
 void PersistentKeyValueStorage::insert(const QString& key, const QString& val)
 {
-	KeyValuePairQString kv{key, val};
-	const auto indexEntry = _index.find(kv.keyHash());
+	// For simplicity, we always append
+	remove(key);
+	_index[key] = appendString(val);
+}
 
-	const auto endPos = _persistentStorageFile.size();
-	if (!_persistentStorageFile.seek(endPos))
-	{
-		qInfo() << "Seek to the location of key/value entry insertion" << endPos << "for key" << key << "failed:" << _persistentStorageFile.errorString();
-		return;
-	}
-
-	if (!kv.write(_persistentStorageFile))
-	{
-		qInfo() << "Writing key/value entry for key" << key << "failed at location" << endPos << "failed:" << _persistentStorageFile.errorString();
-		return;
-	}
-
-	if (indexEntry != _index.end())
-		indexEntry->second = endPos;
-	else
-		_index[kv.keyHash()] = endPos;
+AllocationData PersistentKeyValueStorage::appendString(const QString& str)
+{
+	AllocationData tmp;
+	tmp.pos = _file.size();
+	tmp.allocated = write(tmp.pos, str);
+	return tmp;
 }
 
 void PersistentKeyValueStorage::remove(const QString& key)
 {
-	KeyValuePairQString kv{key, {}};
-	const auto indexEntry = _index.find(kv.keyHash());
-	if (indexEntry == _index.end())
+	auto it = _index.find(key);
+	if (it != _index.end())
 	{
-		qInfo() << "Attempting to remove non-existing key" << key;
-		return;
+		_wasted += it->allocated;
+		_index.erase(it);
 	}
-
-	_index.erase(indexEntry);
 }
 
 int PersistentKeyValueStorage::count()
 {
-	return (int)_index.size();
+	return _index.size();
 }
 
 QString PersistentKeyValueStorage::indexFilePath() const
 {
-	return QFileInfo(_persistentStorageFile.fileName()).canonicalPath() + "/index.db";
+	return QFileInfo(_file.fileName()).canonicalPath() + "/index.db";
 }
 
 void PersistentKeyValueStorage::loadIndex()
@@ -100,60 +82,63 @@ void PersistentKeyValueStorage::loadIndex()
 	QFile indexFile(indexFilePath());
 	if (!indexFile.open(QFile::ReadOnly))
 	{
-		qInfo() << "Failed to open storage index file" << indexFile.fileName() << "for reading, error:" << indexFile.errorString();
+		if (_file.size() != 0)
+			qInfo() << "Failed to open storage index file" << indexFile.fileName() << "for reading, error:" << indexFile.errorString();
 		return;
 	}
 
-	while(!indexFile.atEnd())
-	{
-		std::pair<std::remove_cv<decltype(_index)::value_type::first_type>::type, decltype(_index)::value_type::second_type> indexEntry;
-		if (indexFile.read((char*)&indexEntry.first, sizeof(indexEntry.first)) != sizeof(indexEntry.first))
-		{
-			qInfo() << "Error reading index hash from" << indexFile.fileName() << ":" << indexFile.errorString();
-			return;
-		}
-
-		if (indexFile.read((char*)&indexEntry.second, sizeof(indexEntry.second)) != sizeof(indexEntry.second))
-		{
-			qInfo() << "Error reading index offset from" << indexFile.fileName() << ":" << indexFile.errorString();
-			return;
-		}
-
-		const auto insertionResult = _index.insert(indexEntry);
-		if (!insertionResult.second)
-		{
-			qInfo() << "Duplicate entry in the index. Key hash:" << indexEntry.first << ", offset in the storage:" << indexEntry.second;
-		}
-	}
+	QDataStream strm(&indexFile);
+	strm.setVersion(QDataStream::Qt_5_10);
+	strm >> _index;
+	checkDataStreamStatus(strm);
 }
 
 void PersistentKeyValueStorage::storeIndex()
 {
-	if (_index.empty())
-	{
-		assert(_persistentStorageFile.size() == 0);
-		return;
-	}
-
 	QFile indexFile(indexFilePath());
-	if (!indexFile.open(QFile::WriteOnly))
+	if (!indexFile.open(QFile::WriteOnly | QFile::Truncate))
 	{
 		qInfo() << "Failed to open storage index file" << indexFile.fileName() << "for writing, error:" << indexFile.errorString();
 		return;
 	}
 
-	for (const auto& indexEntry: _index)
-	{
-		if (indexFile.write((const char*)&indexEntry.first, sizeof(indexEntry.first)) != sizeof(indexEntry.first))
-		{
-			qInfo() << "Error writing index hash to" << indexFile.fileName() << ":" << indexFile.errorString();
-			return;
-		}
-
-		if (indexFile.write((const char*)&indexEntry.second, sizeof(indexEntry.second)) != sizeof(indexEntry.second))
-		{
-			qInfo() << "Error writing index offset to" << indexFile.fileName() << ":" << indexFile.errorString();
-			return;
-		}
-	}
+	QDataStream strm(&indexFile);
+	strm.setVersion(QDataStream::Qt_5_10);
+	strm << _index;
+	checkDataStreamStatus(strm);
 }
+
+inline QByteArray serialize(const QString& str)
+{
+	QByteArray res;
+	QDataStream strm(&res, QIODevice::WriteOnly);
+	strm.setVersion(QDataStream::Qt_5_10);
+	strm << str;
+	assert(res.size() > 0);
+	checkDataStreamStatus(strm);
+	return res;
+}
+
+qint64 PersistentKeyValueStorage::write(const qint64 pos, const QString& str)
+{
+	qint64 bytesWritten = -1;
+	QByteArray data = serialize(str);
+	if (_file.seek(pos))
+		bytesWritten = _file.write(data);
+	if (bytesWritten != data.size())
+		throw std::exception(QString("Write failed at location %1: %2").arg(pos).arg(_file.errorString()).toLatin1().constData());
+	return bytesWritten;
+}
+
+QString PersistentKeyValueStorage::read(const qint64 pos) const
+{
+	QDataStream strm(&_file);
+	strm.setVersion(QDataStream::Qt_5_10);
+	if (!_file.seek(pos))
+		throw std::exception(QString("Seek to location %1 failed: %2").arg(pos).arg(_file.errorString()).toLatin1().constData());
+	QString res;
+	strm >> res;
+	checkDataStreamStatus(strm);
+	return res;
+}
+
