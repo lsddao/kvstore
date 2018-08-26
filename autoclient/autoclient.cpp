@@ -42,7 +42,7 @@ void Client::initKeyProvider()
 void Client::initLocalProvider()
 {
 	qInfo() << "initializing local provider";
-	_store.reset(new LocalKeyValueProvider(10, new PersistentKeyValueStorage));
+	_store.reset(new LocalKeyValueProvider);
 }
 
 void Client::initNetworkProvider()
@@ -148,7 +148,7 @@ void Client::test_InsertReadDelete(const int nInserts, const int nReads)
 			_store->insert(keysAndValues[i].first, keysAndValues[i].second);
 
 		if (timer.elapsed() > 0)
-			qInfo() << "INSERT performance:" << keysAndValues.count() / timer.elapsed() << "insertions per ms";
+			qInfo() << "INSERT performance:" << keysAndValues.count() * 1000 / timer.elapsed() << "insertions/s";
 
 		timer.restart();
 		for (int i = 0; i < nReads; ++i)
@@ -158,14 +158,14 @@ void Client::test_InsertReadDelete(const int nInserts, const int nReads)
 		}
 		
 		if (timer.elapsed() > 0)
-			qInfo() << "READ performance:" << nReads / timer.elapsed() << "reads per ms";
+			qInfo() << "READ performance:" << nReads * 1000 / timer.elapsed()  << "reads/s";
 
 		timer.restart();
 		for (int i = 0; i < keysAndValues.count(); ++i)
 			_store->remove(keysAndValues[i].first);
 
 		if (timer.elapsed() > 0)
-			qInfo() << "REMOVE performance:" << keysAndValues.count() / timer.elapsed() << "deletions per ms";
+			qInfo() << "REMOVE performance:" << keysAndValues.count() * 1000 / timer.elapsed() << "deletions/s";
 
 		//QVERIFY(_store->count() == initialKeyCount);
 	}

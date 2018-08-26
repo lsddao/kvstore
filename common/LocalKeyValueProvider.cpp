@@ -1,12 +1,14 @@
 #include "LocalKeyValueProvider.h"
+#include "PersistentKeyValueStorage.h"
 
 #include <QReadLocker>
 #include <QWriteLocker>
 
-LocalKeyValueProvider::LocalKeyValueProvider(unsigned int maxMemoryMB, IKeyValueProvider* persistentStorage)
-	: _maxMemory(maxMemoryMB * 1024 * 1024)
-	, _persistentStorage(persistentStorage)
+LocalKeyValueProvider::LocalKeyValueProvider(unsigned int maxMemoryMB, bool persistValues)
+	: _maxMemory(maxMemoryMB * 1024 * 1024) 
 {
+	if (persistValues)
+		_persistentStorage.reset(new PersistentKeyValueStorage);
 }
 
 LocalKeyValueProvider::~LocalKeyValueProvider()
@@ -22,40 +24,61 @@ QString LocalKeyValueProvider::value(const QString& key) const
 	if (it != _map.constEnd())
 		return *it;
 
-	if (!_persistentStorage)
-		return{};
+	return{};
 
-	const auto value = _persistentStorage->value(key);
-	if (!value.isEmpty())
-	{
-		_lock.tryLockForWrite();
-		_map[key] = value;
-	}
+	//if (!_persistentStorage)
+	//	return{};
 
-	return value;
+	//const auto value = _persistentStorage->value(key);
+	//if (!value.isEmpty())
+	//{
+	//	_lock.tryLockForWrite();
+	//	_map[key] = value;
+	//}
+
+	//return value;
 }
 
 void LocalKeyValueProvider::insert(const QString& key, const QString& val)
 {
 	QWriteLocker l(&_lock);
-
-	_map[key] = val;
-	if (_persistentStorage)
-		_persistentStorage->insert(key, val);
+	insertToCache(key, val);
+	//if (_persistentStorage)
+	//	_persistentStorage->insert(key, val);
 }
 
 void LocalKeyValueProvider::remove(const QString& key)
 {
 	QWriteLocker l(&_lock);
-
-	_map.remove(key);
-	if (_persistentStorage)
-		_persistentStorage->remove(key);
+	removeFromCache(key);
+	//if (_persistentStorage)
+	//	_persistentStorage->remove(key);
 }
 
 int LocalKeyValueProvider::count()
 {
 	QReadLocker l(&_lock);
 
-	return _persistentStorage ? _persistentStorage->count() : _map.size();
+	return /*_persistentStorage ? _persistentStorage->count() :*/ _map.size();
+}
+
+unsigned int LocalKeyValueProvider::usedMemory(const QString& key, const QString& val) const
+{
+	// TODO how to count QHash's internal memory usage?
+	return 2 * (key.capacity() + val.capacity());
+}
+
+void LocalKeyValueProvider::insertToCache(const QString& key, const QString& val)
+{
+	_map[key] = val;
+	_usedMemory += usedMemory(key, val);
+}
+
+void LocalKeyValueProvider::removeFromCache(const QString& key)
+{
+	auto it = _map.constFind(key);
+	if (it == _map.constEnd())
+		return;
+	_usedMemory -= usedMemory(key, *it);
+	_map.erase(it);
 }

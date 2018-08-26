@@ -7,8 +7,8 @@
 #include <assert.h>
 #include <type_traits>
 
-PersistentKeyValueStorage::PersistentKeyValueStorage(const QString& storageFileName /*= "storage.db"*/) :
-	_persistentStorageFile(storageFileName)
+PersistentKeyValueStorage::PersistentKeyValueStorage(const QString& storageFileName)
+	: _persistentStorageFile(storageFileName)
 {
 	if (!_persistentStorageFile.open(QFile::ReadWrite))
 	{

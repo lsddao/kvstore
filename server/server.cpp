@@ -1,14 +1,13 @@
 #include "server.h"
 #include "workerthread.h"
 #include "../common/LocalKeyValueProvider.h"
-#include "../common/PersistentKeyValueStorage.h"
 #include "utils.h"
 
 #include <QTimer>
 
 Server::Server(QObject *parent)
 	: QTcpServer(parent)
-	, _store(new LocalKeyValueProvider(10, new PersistentKeyValueStorage))
+	, _store(new LocalKeyValueProvider)
 {
 	QTimer* timer = new QTimer(this);
 	connect(timer, &QTimer::timeout, this, &Server::printStats);
