@@ -13,12 +13,14 @@ class Client : public QObject
 private slots:
 	void initTestCase();
 
-	void test_Persistense();
-	void benchmark_InsertDelete();
+	void test_Insert();
 
 	void cleanupTestCase();
 
 private:
+	void benchmark_InsertDelete();
+	void test_Persistense();
+
 	void helper_InsertAll(IKeyValueProvider* provider, const KeysAndValues& container);
 	void helper_VerifyAll(IKeyValueProvider* provider, const KeysAndValues& container);
 	void helper_DeleteAll(IKeyValueProvider* provider, const KeysAndValues& container);

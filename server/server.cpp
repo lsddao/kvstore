@@ -29,5 +29,5 @@ void Server::incomingConnection(qintptr socketDescriptor)
 
 void Server::printStats()
 {
-	utils::logInfo(QString("Server stats: %1 items in cache").arg(_store->count()));
+	utils::logInfo(QString("Server stats: %1 items in cache, occupied approx. %2 bytes").arg(_store->count()).arg(_store->cacheMemoryOccupied()));
 }

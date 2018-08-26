@@ -17,8 +17,24 @@ void Client::initTestCase()
 
 	try
 	{
-		//initKeyProvider();
-		//QVERIFY(!_store.isNull());
+		initKeyProvider();
+		QVERIFY(!_store.isNull());
+	}
+	catch (const std::exception& ex)
+	{
+		QFAIL(ex.what());
+	}
+	catch (...)
+	{
+		QFAIL("UNKNOWN ERROR");
+	}
+}
+
+void Client::test_Insert()
+{
+	try
+	{
+		helper_Insert(_store.data(), 10000);
 	}
 	catch (const std::exception& ex)
 	{
