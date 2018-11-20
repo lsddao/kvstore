@@ -14,11 +14,11 @@ private slots:
 	void initTestCase();
 
 	void test_Insert();
+	void benchmark_InsertDelete();
 
 	void cleanupTestCase();
 
 private:
-	void benchmark_InsertDelete();
 	void test_Persistense();
 
 	void helper_InsertAll(IKeyValueProvider* provider, const KeysAndValues& container);

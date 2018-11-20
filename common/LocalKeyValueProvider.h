@@ -10,7 +10,7 @@
 class LocalKeyValueProvider : public IKeyValueProvider
 {
 public:
-	LocalKeyValueProvider(unsigned int maxMemoryMB = 10, bool persistValues = true);
+	LocalKeyValueProvider(unsigned int maxMemoryMB = 100, bool persistValues = true);
 	~LocalKeyValueProvider() override;
 
 	QString value(const QString& key) const override;
